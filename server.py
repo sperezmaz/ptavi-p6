@@ -1,8 +1,6 @@
 #!/usr/bin/python3
 # -*- coding: utf-8 -*-
-"""
-Clase (y programa principal) para un servidor de eco en UDP simple
-"""
+"""Cliente UA que funciona como servidor. Envia el audio via RTP al otro UA."""
 
 import socketserver
 import sys
@@ -10,26 +8,24 @@ import os
 
 
 class EchoHandler(socketserver.DatagramRequestHandler):
-    """
-    Echo server class
-    """
+    """Echo server class."""
 
     def handle(self):
+        """handle method of the server class."""
         # Escribe dirección y puerto del cliente (de tupla client_address)
         line = self.rfile.read()
-        print("El cliente nos manda " + line.decode('utf-8'))
+        print(line.decode('utf-8'))
         message = line.decode('utf-8').split()
         metodo = message[0]
         ip_client = self.client_address[0]
-        puerto_client = self.client_address[1]
         if metodo == "INVITE":
             self.wfile.write(b"SIP/2.0 100 Trying\r\n\r\n")
             self.wfile.write(b"SIP/2.0 180 Ringing\r\n\r\n")
             self.wfile.write(b"SIP/2.0 200 OK\r\n\r\n")
         elif metodo == "ACK":
             # aEjecutar es un string con lo que se ha de ejecutar en la shell
-            aEjecutar1 = 'mp32rtp -i ' + ip_client + '-p ' + puerto_client 
-            aEjecutar = aEjecutar1 + '< ' + FICHERO_AUDIO
+            aEjecutar1 = 'mp32rtp -i ' + ip_client + ' -p 23032 < '
+            aEjecutar = aEjecutar1 + FICHERO_AUDIO
             print("Vamos a ejecutar", aEjecutar)
             os.system(aEjecutar)
         elif metodo == "BYE":
@@ -49,7 +45,7 @@ if __name__ == "__main__":
         sys.exit("Usage: python3 server.py IP port audio_file")
     # Creamos servidor de eco y escuchamos
     serv = socketserver.UDPServer((IP, PORT_SERV), EchoHandler)
-    print("Lanzando servidor UDP de eco...")
+    print("Listening...")
     try:
         serv.serve_forever()  # espera en un bucle
     except KeyboardInterrupt:  # ^C
